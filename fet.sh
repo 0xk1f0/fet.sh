@@ -1,8 +1,10 @@
 #!/bin/sh
 #
 #    fet.sh
-#  a fetch in pure POSIX shell
 #
+# modified by k1f0
+# -> no intention of supporting non-Linux OS's
+# -> changes are mostly personal preference
 
 # supress errors
 exec 2>/dev/null
@@ -17,6 +19,7 @@ eq() {  # equals  |  [ a = b ] with globbing
 ## DE
 wm=$XDG_CURRENT_DESKTOP
 [ "$wm" ] || wm=$DESKTOP_SESSION
+eq "$wm" '*[Gg][Nn][Oo][Mm][Ee]*' && wm='foot DE'
 
 ## Distro
 # freedesktop.org/software/systemd/man/os-release.html
@@ -89,7 +92,7 @@ if [ -e /proc/$$/comm ]; then
 
 	## Kernel
 	read -r _ _ version _ < /proc/version
-	kernel=${version%%-*}
+	kernel=${version}
 	eq "$version" '*Microsoft*' && ID="fake $ID"
 
 	## Motherboard // laptop
@@ -115,112 +118,12 @@ if [ -e /proc/$$/comm ]; then
 	done
 
 	read -r host < /proc/sys/kernel/hostname
-elif [ -f /var/run/dmesg.boot ]; then
-	# Both OpenBSD and FreeBSD use this file, however they're formatted differently
-	read -r bsd < /var/run/dmesg.boot
-	case $bsd in
-	Open*)
-		## OpenBSD cpu/mem/name
-		while read -r line; do
-			case $line in
-				'real mem'*)
-					# use the pre-formatted value which is in brackets
-					mem=${line##*\(}
-					mem=${mem%\)*}
-				;;
-				# set $cpu to everything before a comma and after the field name
-				cpu0:*)
-					cpu=${line#cpu0: }
-					# Remove excess info after the actual CPU name
-					cpu=${cpu%%,*}
-					# Set the CPU Manufacturer to the first word of the cpu
-					# variable [separated by '(' or ' ']
-					vendor=${cpu%%[\( ]*}
-					# We got all the info we want, stop reading
-					break
-				;;
-				# First 2 words in the file are OpenBSD <version>
-				*) [ "$ID" ] || { set -- $line; ID="$1 $2"; }
-			esac
-		done < /var/run/dmesg.boot
-		[ -d /var/db/pkg ] && set -- /var/db/pkg/* && pkgs=$#
-		read -r host < /etc/myname
-		host=${host%.*}
-	;;
-	# Everything else, assume FreeBSD (first line is ---<<BOOT>> or something)
-	*)
-		# shellcheck source=/dev/null
-		. /etc/rc.conf
-		# shut shellcheck up without disabling the warning
-		host=${hostname:-}
-
-		while read -r line; do
-			case $line in
-				# Ignore useless lines at the top
-				-*|'  '*) ;;
-				*trademark*) ;;
-
-				# os version
-				FreeBSD*)
-					# If the OS is already set, no need to set it again
-					[ "$ID" ] && continue
-					ID=${line%%-R*}
-				;;
-
-				CPU:*)
-					cpu=${cpu#CPU: }
-					# Remove excess info from after the actual CPU name
-					cpu=${line%\(*}
-				;;
-				*Origin=*)
-					# CPU Manufacturer
-					vendor=${line#*Origin=\"}
-					vendor="${vendor%%\"*} "
-				;;
-
-				'real memory'*)
-					# Get the pre-formatted amount which is inside brackets
-					mem=${line##*\(}
-					mem=${mem%\)*}
-					# This appears to be the final thing we need from the file,
-					# no need to read it more.
-					break
-			esac
-		done < /var/run/dmesg.boot
-	;;
-	esac
-elif v=/System/Library/CoreServices/SystemVersion.plist; [ -f "$v" ]; then
-	## Macos
-	# make sure this variable is empty as to not break the following loop
-	temp=
-	while read -r line; do
-		case $line in
-			# set a variable so the script knows it's on the correct line
-			# (the line after this one is the important one)
-			*ProductVersion*) temp=.;;
-			*)
-				# check if the script is reading the derired line, if not
-				# don't do anything
-				[ "$temp" ] || continue
-				# Remove everything before and including the first '>'
-				ID=${line#*>}
-				# Remove the other side of the XML tag, and insert the actual OS name
-				ID="MacOS ${ID%<*}"
-				# We got the info we want, end the loop.
-				break
-		esac
-	done < "$v"
 fi
 
-eq "$0" '*fetish' && printf 'Step on me daddy\n' && exit
-
-# help i dont know if it's a capital consistently
-eq "$wm" '*[Gg][Nn][Oo][Mm][Ee]*' && wm='foot DE'
-
-## GTK
-while read -r line; do
-	eq "$line" 'gtk-theme*' && gtk=${line##*=} && break
-done < "${XDG_CONFIG_HOME:=$HOME/.config}/gtk-3.0/settings.ini"
+# GPU
+# This is probably very inefficient and could be done better 
+# but here we go
+gpu=$(glxinfo | grep 'Device' | cut -d ':' -f 2 | cut -d '(' -f 1 | cut -c 2-)
 
 # Shorten $cpu and $vendor
 # this is so messy due to so many inconsistencies in the model names
@@ -234,37 +137,39 @@ cpu=${cpu##*AMD }
 cpu=${cpu%% with*}
 cpu=${cpu% *-Core*}
 
-col() {
-	printf '  '
-	for i in 1 2 3 4 5 6; do
-		printf '\033[9%sm%s' "$i" "${colourblocks:-▅▅}"
+printUserHost() {
+	seperator="─"
+	printf "\e[1m\e[9%sm%s\e[0m\e[1m@\e[9%sm%s\e[0m\n" "$accentNumber" "$1" "$accentNumber" "$2"
+	userHost="$1@$2"
+	for ((i = 0; i < ${#userHost}; i++)); do
+		seperatorLine+="$seperator"
 	done
-	printf '\033[0m\n'
+	printf "%s\t\n" "$seperatorLine"
 }
 
-print() {
-	[ "$2" ] && printf '\033[9%sm%6s\033[0m%b%s\n' \
-		"${accent:-4}" "$1" "${separator:- ~ }" "$2"
+printNormal() {
+	printf "\e[1m\e[9%sm%s\e[0m\t%s\n" "$accentNumber" "$1" "$2"
 }
 
-# default value
-: "${info:=n user os sh wm up gtk cpu mem host kern pkgs term col n}"
+# default values
+info="spc userHost spr os kern wm cpu gpu term spc"
+# accent color number (try 0-9)
+accentNumber=6
 
 for i in $info; do
 	case $i in
-		n) echo;;
-		os) print os "$ID";;
-		sh) print sh "${SHELL##*/}";;
-		wm) print wm "${wm##*/}";;
-		up) print up "$up";;
-		gtk) print gtk "${gtk# }";;
-		cpu) print cpu "$vendor$cpu";;
-		mem) print mem "$mem";;
-		host) print host "$model";;
-		kern) print kern "$kernel";;
-		pkgs) print pkgs "$pkgs";;
-		term) print term "$term";;
-		user) printf '%7s@%s\n' "$USER" "$host";;
-		col) col;;
+		userHost) printUserHost "$USER" "$host";;
+		os) printNormal os "$NAME";;
+		kern) printNormal kernel "$kernel";;
+		wm) printNormal wm "${wm}";;
+		sh) printNormal shell "${SHELL}";;
+		cpu) printNormal cpu "$vendor$cpu";;
+		gpu) printNormal gpu "$gpu";;
+		mem) printNormal mem "$mem";;
+		up) printNormal up "$up";;
+		host) printNormal host "$model";;
+		pkgs) printNormal pkgs "$pkgs";;
+		term) printNormal term "$term";;
+		spc) echo;;
 	esac
 done
