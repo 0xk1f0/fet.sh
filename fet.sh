@@ -137,6 +137,7 @@ cpu=${cpu##*AMD }
 cpu=${cpu%% with*}
 cpu=${cpu% *-Core*}
 
+# print first line with user@hostname
 printUserHost() {
 	seperator="─"
 	printf "\e[1m\e[9%sm%s\e[0m\e[1m@\e[9%sm%s\e[0m\n" "$accentNumber" "$1" "$accentNumber" "$2"
@@ -147,12 +148,13 @@ printUserHost() {
 	printf "%s\t\n" "$seperatorLine"
 }
 
+# print the other normal fetch lines
 printNormal() {
 	printf "\e[1m\e[9%sm%s\e[0m\t%s\n" "$accentNumber" "$1" "$2"
 }
 
 # default values
-info="spc userHost spr os kern wm cpu gpu term spc"
+info="space userHost os kernel wm cpu gpu terminal space"
 # accent color number (try 0-9)
 accentNumber=6
 
@@ -160,16 +162,16 @@ for i in $info; do
 	case $i in
 		userHost) printUserHost "$USER" "$host";;
 		os) printNormal os "$NAME";;
-		kern) printNormal kernel "$kernel";;
+		kernel) printNormal kernel "$kernel";;
 		wm) printNormal wm "${wm}";;
-		sh) printNormal shell "${SHELL}";;
+		shell) printNormal shell "${SHELL}";;
 		cpu) printNormal cpu "$vendor$cpu";;
 		gpu) printNormal gpu "$gpu";;
-		mem) printNormal mem "$mem";;
+		ram) printNormal mem "$mem";;
 		up) printNormal up "$up";;
 		host) printNormal host "$model";;
-		pkgs) printNormal pkgs "$pkgs";;
-		term) printNormal term "$term";;
-		spc) echo;;
+		packages) printNormal pkgs "$pkgs";;
+		terminal) printNormal term "$term";;
+		space) echo;;
 	esac
 done
