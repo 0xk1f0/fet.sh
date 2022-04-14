@@ -16,11 +16,6 @@ eq() {  # equals  |  [ a = b ] with globbing
 	esac
 }
 
-## DE
-wm=$XDG_CURRENT_DESKTOP
-[ "$wm" ] || wm=$DESKTOP_SESSION
-eq "$wm" '*[Gg][Nn][Oo][Mm][Ee]*' && wm='foot DE'
-
 ## Distro
 # freedesktop.org/software/systemd/man/os-release.html
 # a common file that has variables about the distro
@@ -57,15 +52,13 @@ if [ -e /proc/$$/comm ]; then
 	done
 
 	## WM/DE
-	[ "$wm" ] ||
-		# loop over all processes and check the binary name
-		for i in /proc/*/comm; do
-			read -r c < "$i"
-			case $c in
-				*bar*|*rc) ;;
-				awesome|xmonad*|qtile|sway|i3|[bfo]*box|*wm*) wm=${c%%-*}; break;;
-			esac
-		done
+    [ "$wm" ] ||
+        # use xprop to determine WM
+		winID=$(xprop -root -notype | grep "_NET_SUPPORTING_WM_CHECK: window" |
+		cut -d "#" -f 2 | tr -d '[:blank:]')
+		attr=$(xprop -id "${winID}" -notype -f _NET_WM_NAME 8t)
+		wm=$(echo "${attr}" | grep "_NET_WM_NAME = " |
+		tr -d '"[:blank:]' | cut -d '=' -f 2)
 
 	## Memory
 	# loop over lines in /proc/meminfo until it reaches MemTotal,
@@ -156,7 +149,7 @@ printNormal() {
 # default values
 info="space userHost os kernel wm cpu gpu terminal space"
 # accent color number (try 0-9)
-accentNumber=6
+accentNumber=7
 
 for i in $info; do
 	case $i in
