@@ -42,7 +42,7 @@ if [ -e /proc/$$/comm ]; then
 
 		case $name in
 			*sh|"${0##*/}") ;;  # skip shells
-			*[Ll]ogin*|*init|*systemd*) break;;  # exit when the top is reached
+			*[Ll]ogin*|*init*|*systemd*) break;;  # exit when the top is reached
 			# anything else can be assumed to be the terminal
 			# this has the side affect of catching tmux, but tmux
 			# detaches from the terminal and therefore ignoring that
@@ -95,7 +95,7 @@ if [ -e /proc/$$/comm ]; then
 		# alternate file with slightly different info
 		# on my laptop it has the device model (instead of 'hp notebook')
 		# on my desktop it has the extended motherboard model
-		'System '*|'Default '*|'To Be Filled'*)
+		'System '*|'Default '*)
 			read -r model < /sys/devices/virtual/dmi/id/board_name
 	esac
 
