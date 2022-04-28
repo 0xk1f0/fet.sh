@@ -147,7 +147,7 @@ printNormal() {
 }
 
 # default values
-info="space userHost os kernel wm cpu gpu terminal space"
+info="space userHost os kernel cpu gpu shell wm terminal space"
 # accent color number (try 0-9)
 accentNumber=7
 
@@ -155,9 +155,9 @@ for i in $info; do
 	case $i in
 		userHost) printUserHost "$USER" "$host";;
 		os) printNormal os "$NAME";;
-		kernel) printNormal kernel "$kernel";;
+		kernel) printNormal kern "$kernel";;
 		wm) printNormal wm "${wm}";;
-		shell) printNormal shell "${SHELL}";;
+		shell) printNormal sh "${SHELL}";;
 		cpu) printNormal cpu "$vendor$cpu";;
 		gpu) printNormal gpu "$gpu";;
 		ram) printNormal mem "$mem";;
