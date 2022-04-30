@@ -72,7 +72,9 @@ if [ -e /proc/$$/comm ]; then
 	while read -r line; do
 		case $line in
 			vendor_id*) vendor="${line##*: } ";;
-			model\ name*) cpu=${line##*: }; break;;
+			model\ name*) cpu=${line##*: };;
+			siblings*) cpu_threads=${line##*: };;
+			cpu\ cores*) cpu_cores=${line##*: }; break;;
 		esac
 	done < /proc/cpuinfo
 
@@ -118,6 +120,10 @@ fi
 # but here we go
 gpu=$(glxinfo | grep 'Device' | cut -d ':' -f 2 | cut -d '(' -f 1 | cut -c 2-)
 
+# Kernel Scaling Props
+read -r kernel_sclgov < /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+read -r kernel_scldrv < /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver
+
 # Shorten $cpu and $vendor
 # this is so messy due to so many inconsistencies in the model names
 vendor=${vendor##*Authentic}
@@ -133,7 +139,7 @@ cpu=${cpu% *-Core*}
 # print first line with user@hostname
 printUserHost() {
 	seperator="─"
-	printf "\e[1m\e[9%sm%s\e[0m\e[1m@\e[9%sm%s\e[0m\n" "$accentNumber" "$1" "$accentNumber" "$2"
+	printf "\e[1m\e[9%sm%s\e[0m\e[1m@\e[9%sm%s\e[0m\n" "$ACCENT_NUMBER" "$1" "$ACCENT_NUMBER" "$2"
 	userHost="$1@$2"
 	for ((i = 0; i < ${#userHost}; i++)); do
 		seperatorLine+="$seperator"
@@ -141,24 +147,45 @@ printUserHost() {
 	printf "%s\t\n" "$seperatorLine"
 }
 
+# print kernel info and extended parameters
+printKernel() {
+	printNormal "$1" "$2"
+	if $KERNEL_EXT; then
+		printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" "$ACCENT_NUMBER" sclgov "$kernel_sclgov"
+		printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" "$ACCENT_NUMBER" scldrv "$kernel_scldrv"
+	fi
+}
+
+# print cpu info and extended parameters
+printCPU() {
+	printNormal "$1" "$2"
+	if $CPU_EXT; then
+		printf "%s\e[1m\e[9%sm%s\e[0m\e[3m   %s\e[0m\n" "└──" "$ACCENT_NUMBER" crs "$cpu_cores"
+		printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" "$ACCENT_NUMBER" thrds "$cpu_threads"
+	fi
+}
+
 # print the other normal fetch lines
 printNormal() {
-	printf "\e[1m\e[9%sm%s\e[0m\t%s\n" "$accentNumber" "$1" "$2"
+	printf "\e[1m\e[9%sm%s\e[0m\t\e[3m%s\e[0m\n" "$ACCENT_NUMBER" "$1" "$2"
 }
 
 # default values
 info="space userHost os kernel cpu gpu shell wm terminal space"
-# accent color number (try 0-9)
-accentNumber=7
+# accent color number (0-8)
+ACCENT_NUMBER=1
+# print extended properties (true/false)
+KERNEL_EXT=true
+CPU_EXT=true
 
 for i in $info; do
 	case $i in
 		userHost) printUserHost "$USER" "$host";;
 		os) printNormal os "$NAME";;
-		kernel) printNormal kern "$kernel";;
+		kernel) printKernel kern "$kernel";;
 		wm) printNormal wm "${wm}";;
 		shell) printNormal sh "${SHELL}";;
-		cpu) printNormal cpu "$vendor$cpu";;
+		cpu) printCPU cpu "$vendor$cpu";;
 		gpu) printNormal gpu "$gpu";;
 		ram) printNormal mem "$mem";;
 		up) printNormal up "$up";;
