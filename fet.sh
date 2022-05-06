@@ -141,9 +141,12 @@ printUserHost() {
 	seperator="─"
 	printf "\e[1m\e[9%sm%s\e[0m\e[1m@\e[9%sm%s\e[0m\n" "$ACCENT_NUMBER" "$1" "$ACCENT_NUMBER" "$2"
 	userHost="$1@$2"
-	for ((i = 0; i < ${#userHost}; i++)); do
-		seperatorLine+="$seperator"
-	done
+    x=0
+    while [ $x -lt ${#userHost} ]
+    do
+            seperatorLine="$seperatorLine$seperator"
+            x=$(( $x+1 ))
+    done
 	printf "%s\t\n" "$seperatorLine"
 }
 
