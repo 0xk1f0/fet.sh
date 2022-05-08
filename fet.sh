@@ -144,7 +144,7 @@ else
 			| cut -d ']' -f1 )
 			;;
 		*"Red"*)
-			gpuVendor="RedHat "
+			gpuVendor="RedHat"
 			gpu=$gpuVendor$(echo $controller \
 			| cut -d '.' -f2 \
 			| cut -d '(' -f1 )
@@ -180,13 +180,13 @@ printUserHost() {
     x=0
     while [ $x -lt ${#userHost} ]
     do
-            seperatorLine="$seperatorLine$seperator"
-            x=$(( $x+1 ))
+		seperatorLine="$seperatorLine$seperator"
+		x=$(( $x+1 ))
     done
 	printf "%s\t\n" "$seperatorLine"
 }
 
-# print kernel info and extended parameters
+# print kernel info and extended parameters if found
 printKernel() {
 	printNormal "$1" "$2"
 	if $KERNEL_EXT; then
@@ -199,7 +199,7 @@ printKernel() {
 	fi
 }
 
-# print cpu info and extended parameters
+# print cpu info and extended parameters if found
 printCPU() {
 	printNormal "$1" "$2"
 	if $CPU_EXT; then
@@ -212,13 +212,20 @@ printCPU() {
 	fi
 }
 
+# print gpu info if found
+printGPU() {
+	if [[ -v gpu ]]; then
+		printf "\e[1m\e[9%sm%s\e[0m\t\e[3m%s\e[0m\n" \
+		"$ACCENT_NUMBER" "$1" "$2"; fi
+}
+
 # print the other normal fetch lines
 printNormal() {
 	printf "\e[1m\e[9%sm%s\e[0m\t\e[3m%s\e[0m\n" "$ACCENT_NUMBER" "$1" "$2"
 }
 
 # default values
-info="space userHost os kernel cpu gpu shell wm terminal space"
+info="space userHost os kernel cpu gpu shell space"
 # accent color number (0-8)
 ACCENT_NUMBER=1
 # print extended properties (true/false)
@@ -233,7 +240,7 @@ for i in $info; do
 		wm) printNormal wm "${wm}";;
 		shell) printNormal sh "${SHELL}";;
 		cpu) printCPU cpu "$vendor$cpu";;
-		gpu) printNormal gpu "$gpu";;
+		gpu) printGPU gpu "$gpu";;
 		ram) printNormal mem "$mem";;
 		up) printNormal up "$up";;
 		host) printNormal host "$model";;
