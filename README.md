@@ -1,6 +1,6 @@
 <div align="center">
 <h1>fet.sh-fork by k1f0</h1>
-modified/tweaked, mostly based on personal preference
+<p>modified/tweaked, mostly based on personal preference</p>
 <br>
 <img src="screenshot.png" width="250px">
 </div>
