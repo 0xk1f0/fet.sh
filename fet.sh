@@ -118,11 +118,47 @@ fi
 # GPU
 # This is probably very inefficient and could be done better 
 # but here we go
-gpu=$(glxinfo | grep 'Device' | cut -d ':' -f 2 | cut -d '(' -f 1 | cut -c 2-)
+if command -v /bin/glxinfo >> /dev/null; then
+	gpu=$(glxinfo | grep 'Device' \
+	| cut -d ':' -f2 \
+	| cut -d '(' -f1 | cut -c2-)
+else
+	controller=$(lspci | grep 'VGA' | cut -d ':' -f3)
+	case $controller in
+		*"NVIDIA"*)
+			gpuVendor="Nvidia "
+			gpu=$gpuVendor$(echo $controller \
+			| cut -d '[' -f2 \
+			| cut -d ']' -f1 )
+			;;
+		*"Intel"*)
+			gpuVendor="Intel "
+			gpu=$gpuVendor$(echo $controller \
+			| cut -d ' ' -f4- \
+			| cut -d '(' -f1 )
+			;;
+		*"Advanced"*)
+			gpuVendor="AMD "
+			gpu=$gpuVendor$(echo $controller \
+			| cut -d '[' -f3 \
+			| cut -d ']' -f1 )
+			;;
+		*"Red"*)
+			gpuVendor="RedHat "
+			gpu=$gpuVendor$(echo $controller \
+			| cut -d '.' -f2 \
+			| cut -d '(' -f1 )
+			;;
+	esac
+fi
 
 # Kernel Scaling Props
-read -r kernel_sclgov < /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-read -r kernel_scldrv < /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver
+KERN_GOV_PATH='/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'
+KERN_DRV_PATH='/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver'
+if [ -e $KERN_GOV_PATH ]; then
+	read -r kernel_sclgov < $KERN_GOV_PATH; fi
+if [ -e $KERN_GOV_PATH ]; then
+	read -r kernel_scldrv < $KERN_DRV_PATH; fi
 
 # Shorten $cpu and $vendor
 # this is so messy due to so many inconsistencies in the model names
@@ -154,8 +190,12 @@ printUserHost() {
 printKernel() {
 	printNormal "$1" "$2"
 	if $KERNEL_EXT; then
-		printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" "$ACCENT_NUMBER" sclgov "$kernel_sclgov"
-		printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" "$ACCENT_NUMBER" scldrv "$kernel_scldrv"
+		if [[ -v kernel_sclgov ]]; then 
+			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" \
+			"$ACCENT_NUMBER" sclgov "$kernel_sclgov"; fi
+		if [[ -v kernel_scldrv ]]; then 
+			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" \
+			"$ACCENT_NUMBER" scldrv "$kernel_scldrv"; fi
 	fi
 }
 
@@ -163,8 +203,12 @@ printKernel() {
 printCPU() {
 	printNormal "$1" "$2"
 	if $CPU_EXT; then
-		printf "%s\e[1m\e[9%sm%s\e[0m\e[3m   %s\e[0m\n" "└──" "$ACCENT_NUMBER" crs "$cpu_cores"
-		printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" "$ACCENT_NUMBER" thrds "$cpu_threads"
+		if [[ -v cpu_cores ]]; then 
+			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m   %s\e[0m\n" "└──" \
+			"$ACCENT_NUMBER" crs "$cpu_cores"; fi
+		if [[ -v cpu_threads ]]; then 
+			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" \
+			"$ACCENT_NUMBER" thrds "$cpu_threads"; fi
 	fi
 }
 
