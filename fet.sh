@@ -52,13 +52,22 @@ if [ -e /proc/$$/comm ]; then
 	done
 
 	## WM/DE
+	[ "$wm" ] ||
+		# loop over all processes and check the binary name
+		for i in /proc/*/comm; do
+			read -r c < "$i"
+			case $c in
+				*bar*|*rc) ;;
+				awesome|xmonad*|qtile|sway|i3|[bfo]*box|*wm*) wm=${c%%-*}; break;;
+			esac
+		done
     [ "$wm" ] ||
         # use xprop to determine WM
-		winID=$(xprop -root -notype | grep "_NET_SUPPORTING_WM_CHECK: window" |
-		cut -d "#" -f 2 | tr -d '[:blank:]')
-		attr=$(xprop -id "${winID}" -notype -f _NET_WM_NAME 8t)
-		wm=$(echo "${attr}" | grep "_NET_WM_NAME = " |
-		tr -d '"[:blank:]' | cut -d '=' -f 2)
+		winID=$(xprop -root -notype | grep "_NET_SUPPORTING_WM_CHECK: window" \
+		| cut -d "#" -f 2 | tr -d '[:blank:]') &&
+		attr=$(xprop -id "${winID}" -notype -f _NET_WM_NAME 8t) &&
+		wm=$(echo "${attr}" | grep "_NET_WM_NAME = " \
+		| tr -d '"[:blank:]' | cut -d '=' -f 2);
 
 	## Memory
 	# loop over lines in /proc/meminfo until it reaches MemTotal,
@@ -192,12 +201,12 @@ printUserHost() {
 printKernel() {
 	printNormal "$1" "$2"
 	if $KERNEL_EXT; then
-		if [[ -v kernel_sclgov ]]; then 
+		[ ! "$kernel_sclgov" ] ||
 			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" \
-			"$ACCENT_NUMBER" sclgov "$kernel_sclgov"; fi
-		if [[ -v kernel_scldrv ]]; then 
+			"$ACCENT_NUMBER" sclgov "$kernel_sclgov";
+		[ ! "$kernel_scldrv" ] || 
 			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" \
-			"$ACCENT_NUMBER" scldrv "$kernel_scldrv"; fi
+			"$ACCENT_NUMBER" scldrv "$kernel_scldrv";
 	fi
 }
 
@@ -205,20 +214,20 @@ printKernel() {
 printCPU() {
 	printNormal "$1" "$2"
 	if $CPU_EXT; then
-		if [[ -v cpu_cores ]]; then 
+		[ ! "$cpu_cores" ] ||
 			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m   %s\e[0m\n" "└──" \
-			"$ACCENT_NUMBER" crs "$cpu_cores"; fi
-		if [[ -v cpu_threads ]]; then 
+			"$ACCENT_NUMBER" crs "$cpu_cores";
+		[ ! "$cpu_threads" ] || 
 			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" \
-			"$ACCENT_NUMBER" thrds "$cpu_threads"; fi
+			"$ACCENT_NUMBER" thrds "$cpu_threads";
 	fi
 }
 
 # print gpu info if found
 printGPU() {
-	if [[ -v gpu ]]; then
+	[ ! "$gpu" ] ||
 		printf "\e[1m\e[9%sm%s\e[0m\t\e[3m%s\e[0m\n" \
-		"$ACCENT_NUMBER" "$1" "$2"; fi
+		"$ACCENT_NUMBER" "$1" "$2";
 }
 
 # print the other normal fetch lines
