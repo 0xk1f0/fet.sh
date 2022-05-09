@@ -71,11 +71,13 @@ if [ -e /proc/$$/comm ]; then
 	## Processor
 	while read -r line; do
 		case $line in
-			vendor_id*) vendor="${line##*: } ";;
-			model\ name*) cpu=${line##*: };;
-			siblings*) cpu_threads=${line##*: };;
-			cpu\ cores*) cpu_cores=${line##*: }; break;;
+			vendor_id*) vendor="${line##*: } " ;;
+			model\ name*) cpu="${line##*: }" ;;
+			siblings*) cpu_threads="${line##*: }" ;;
+			cpu\ cores*) cpu_cores="${line##*: }" ;;
+			Hardware*) cpu_alt="${line##*: }" ;;
 		esac
+		if ! [[ -v cpu ]]; then cpu=$cpu_alt; fi
 	done < /proc/cpuinfo
 
 	## Uptime
