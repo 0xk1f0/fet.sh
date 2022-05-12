@@ -85,8 +85,11 @@ if [ -e /proc/$$/comm ]; then
 			siblings*) cpu_threads="${line##*: }" ;;
 			cpu\ cores*) cpu_cores="${line##*: }" ;;
 			Hardware*) cpu_alt="${line##*: }" ;;
+			Model*) board_model="${line##*: }" ;;
 		esac
-		if ! [[ -v cpu ]]; then cpu=$cpu_alt; fi
+		# should model name not be found, use hardware param
+		# this could mean that we are dealing with a raspberry pi
+		[ "$cpu" ] || cpu=$cpu_alt;
 	done < /proc/cpuinfo
 
 	## Uptime
@@ -221,6 +224,9 @@ printCPU() {
 			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" \
 			"$ACCENT_NUMBER" thrds "$cpu_threads";
 	fi
+	# should model name be found in cpuinfo, print it
+	# this is mostly raspberry pi, can be other boards too tho
+	[ ! "$board_model" ] || printNormal "model" "$board_model"
 }
 
 # print gpu info if found
