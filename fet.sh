@@ -6,6 +6,20 @@
 # -> no intention of supporting non-Linux OS's
 # -> changes are mostly personal preference
 
+
+############ CONFIGURATION ##############
+# default things to show
+# available: userHost, os, kernel, wm, shell, cpu, gpu, 
+#			ram, uptime, host, packages, terminal, space
+FTSH_INFO="space userHost os kernel cpu gpu shell space"
+# accent color number (0-8)
+ACCENT_NUMBER=8
+# print extended properties (true/false)
+KERNEL_EXT=true
+CPU_EXT=true
+########################################
+
+
 # supress errors
 exec 2>/dev/null
 set --
@@ -137,7 +151,7 @@ if command -v /bin/glxinfo >> /dev/null; then
 	| cut -d ':' -f2 \
 	| cut -d '(' -f1 | cut -c2-)
 else
-	controller=$(lspci | grep 'VGA' | cut -d ':' -f3)
+	controller=$(lspci | grep -E 'VGA|Display|3D' | cut -d ':' -f3)
 	case $controller in
 		*"NVIDIA"*)
 			gpuVendor="Nvidia "
@@ -241,25 +255,17 @@ printNormal() {
 	printf "\e[1m\e[9%sm%s\e[0m\t\e[3m%s\e[0m\n" "$ACCENT_NUMBER" "$1" "$2"
 }
 
-# default values
-info="space userHost os kernel cpu gpu shell space"
-# accent color number (0-8)
-ACCENT_NUMBER=1
-# print extended properties (true/false)
-KERNEL_EXT=true
-CPU_EXT=true
-
-for i in $info; do
+for i in $FTSH_INFO; do
 	case $i in
 		userHost) printUserHost "$USER" "$host";;
 		os) printNormal os "$NAME";;
 		kernel) printKernel kern "$kernel";;
-		wm) printNormal wm "${wm}";;
+		wm) printNormal wm "$wm";;
 		shell) printNormal sh "${SHELL}";;
 		cpu) printCPU cpu "$vendor$cpu";;
 		gpu) printGPU gpu "$gpu";;
 		ram) printNormal mem "$mem";;
-		up) printNormal up "$up";;
+		uptime) printNormal up "$up";;
 		host) printNormal host "$model";;
 		packages) printNormal pkgs "$pkgs";;
 		terminal) printNormal term "$term";;
