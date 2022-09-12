@@ -11,7 +11,7 @@
 # default things to show
 # available: userHost, os, kernel, wm, shell, cpu, gpu, 
 #			ram, uptime, host, packages, terminal, space
-FTSH_INFO="space userHost os kernel cpu gpu shell space"
+FTSH_INFO="space userHost os kernel cpu gpu wm shell space"
 # accent color number (0-8)
 ACCENT_NUMBER=8
 # print extended properties (true/false)
@@ -66,6 +66,7 @@ if [ -e /proc/$$/comm ]; then
 	done
 
 	## WM/DE
+	wm=$XDG_CURRENT_DESKTOP
 	[ "$wm" ] ||
 		# loop over all processes and check the binary name
 		for i in /proc/*/comm; do
