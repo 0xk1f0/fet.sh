@@ -12,6 +12,7 @@ Copy `fet.sh` to somewhere in $PATH and mark it as executable (`chmod +x fet.sh`
 - GPU-Info
 - Extended Kernel Info
 - Extended CPU Info
+- Raspberry Pi Detection
 
 ## Removed:
 - FreeBSD/MacOS Support (mainly for code reduction)
