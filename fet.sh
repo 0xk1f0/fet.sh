@@ -17,6 +17,7 @@ ACCENT_NUMBER=8
 # print extended properties (true/false)
 KERNEL_EXT=true
 CPU_EXT=true
+SCHED_EXT=true
 ########################################
 
 
@@ -184,10 +185,16 @@ fi
 # Kernel Scaling Props
 KERN_GOV_PATH='/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'
 KERN_DRV_PATH='/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver'
+KERN_SHDXT_PATH='/sys/kernel/sched_ext/state'
+KERN_XTDRV_PATH='/sys/kernel/sched_ext/root/ops'
 if [ -e $KERN_GOV_PATH ]; then
 	read -r kernel_sclgov < $KERN_GOV_PATH; fi
 if [ -e $KERN_GOV_PATH ]; then
 	read -r kernel_scldrv < $KERN_DRV_PATH; fi
+if [ -e $KERN_SHDXT_PATH ]; then
+	read -r kernel_shdxt < $KERN_SHDXT_PATH; fi
+if [ -e $KERN_XTDRV_PATH ]; then
+	read -r kernel_xtdrv < $KERN_XTDRV_PATH; fi
 
 # Shorten $cpu and $vendor
 # this is so messy due to so many inconsistencies in the model names
@@ -220,11 +227,17 @@ printKernel() {
 	printNormal "$1" "$2"
 	if $KERNEL_EXT; then
 		[ ! "$kernel_sclgov" ] ||
-			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" \
+			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└─" \
 			"$ACCENT_NUMBER" sclgov "$kernel_sclgov";
 		[ ! "$kernel_scldrv" ] || 
-			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" \
+			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└─" \
 			"$ACCENT_NUMBER" scldrv "$kernel_scldrv";
+		[ ! "$kernel_shdxt" ] || 
+			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m  %s\e[0m\n" "└─" \
+			"$ACCENT_NUMBER" shdxt "$kernel_shdxt";
+		[ ! "$kernel_xtdrv" ] || 
+			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m  %s\e[0m\n" "└─" \
+			"$ACCENT_NUMBER" xtdrv "$kernel_xtdrv";
 	fi
 }
 
@@ -233,10 +246,10 @@ printCPU() {
 	printNormal "$1" "$2"
 	if $CPU_EXT; then
 		[ ! "$cpu_cores" ] ||
-			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m   %s\e[0m\n" "└──" \
+			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m   %s\e[0m\n" "└─" \
 			"$ACCENT_NUMBER" crs "$cpu_cores";
 		[ ! "$cpu_threads" ] || 
-			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└──" \
+			printf "%s\e[1m\e[9%sm%s\e[0m\e[3m %s\e[0m\n" "└─" \
 			"$ACCENT_NUMBER" thrds "$cpu_threads";
 	fi
 	# should model name be found in cpuinfo, print it
